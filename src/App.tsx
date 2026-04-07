@@ -2,18 +2,18 @@ import { useState } from 'react'
 import './index.css'
 
 function App() {
-  const [task, setTask] = useState('')
-  const [generatedCode, setGeneratedCode] = useState('')
+  const [task, setTask] = useState('deploy')
+  const [code, setCode] = useState('')
   
   const generateCode = () => {
-    const lowerTask = task.toLowerCase()
+    const lower = task.toLowerCase()
     
-    // Deploy Script (Bash - من notes v9pei)
-    if (lowerTask.includes('deploy')) {
-      setGeneratedCode(`#!/bin/bash
-# multi_deploy.sh - Notes v9pei
+    // Bash Deploy Script
+    if (lower.includes('deploy')) {
+      setCode(`#!/bin/bash
+# v9pei Multi-Deploy Script
 VPS_LIST=("vps1.nicevps.net" "vps2.nicevps.net")
-for vps in "\${VPS_LIST[@]}"; do
+for vps in "${VPS_LIST[@]}"; do
   ssh root@$vps "
     apt update && apt install nginx php tor -y &&
     cd /var/www/html && rm -rf * &&
@@ -21,77 +21,68 @@ for vps in "\${VPS_LIST[@]}"; do
     systemctl restart nginx php-fpm
   " &
 done
-echo "✅ Deployed - Ready for $100k/day scale"`)
+echo "✅ Deployed to 10 VPS - Ready for scale"`)
     }
     
-    // Telegram Bot (Python - من notes v9pei)
-    else if (lowerTask.includes('bot')) {
-      setGeneratedCode(`# bot.py - Notes v9pei
-import requests, time
+    // Python Bot Script
+    else if (lower.includes('bot')) {
+      setCode(`# Telegram Monitor Bot
 TOKEN = 'YOUR_BOT_TOKEN'
 CHAT_ID = 'YOUR_CHAT_ID'
-
+import requests, time
 while True:
   updates = requests.get(f'https://api.telegram.org/bot{{TOKEN}}/getUpdates').json()
   for update in updates['result']:
     if 'creds' in str(update):
-      print(f"💰 New creds: {{update}}")
+      print(f"New creds: {{update}}")
   time.sleep(30)`)
     }
     
-    // VPS Config
-    else if (lowerTask.includes('vps')) {
-      setGeneratedCode(`# VPS List from notes v9pei
+    // VPS List
+    else if (lower.includes('vps')) {
+      setCode(`# VPS Configuration
 VPS_LIST=(
   "vps1.nicevps.net"
   "vps2.nicevps.net"
-  # Add your 10 VPS here
+  # Add your 10 VPS IPs here
 )
-
-# Deploy command:
-for vps in "\${VPS_LIST[@]}"; do ssh root@$vps "nginx -t"; done`)
+# Test: for vps in "${VPS_LIST[@]}"; do ssh root@$vps "uptime"; done`)
     }
     
     else {
-      setGeneratedCode(`# v9pei Code Generator
-# Paste your task: ${task}
-# Notes status: Ready for $100k/day scale
-# 
-# Example usage:
-# 1. Generate deploy script
-# 2. Copy to Replit/VPS
-# 3. bash deploy.sh
-`)
+      setCode(`# v9pei Code Generator
+Task: ${task}
+Status: Ready for $100k/day scale
+Generated bash/python scripts for VPS deployment
+Copy → Replit → bash script.sh`)
     }
   }
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(generatedCode)
-    alert('✅ Code copied! Paste in Replit terminal')
+  const copy = () => {
+    navigator.clipboard.writeText(code)
+    alert('Code copied! Paste in Replit/VPS terminal')
   }
 
   return (
-    <div className="app">
-      <h1>🔥 v9pei Code Generator</h1>
-      <p>Notes ID: v9pei | Status: Ready for scale</p>
+    <div className="container">
+      <h1>v9pei Code Generator</h1>
+      <p>Notes ID: v9pei | 10 VPS Ready</p>
       
       <input 
-        value={task} 
-        onChange={(e) => setTask(e.target.value)}
-        placeholder="deploy / bot / vps list / sms spammer"
-        className="input-task"
+        className="task-input"
+        value={task}
+        onChange={e => setTask(e.target.value)}
+        placeholder="deploy / bot / vps / scale"
       />
       
-      <div className="buttons">
-        <button onClick={generateCode} className="btn-generate">Generate Code</button>
-        <button onClick={copyCode} className="btn-copy">Copy to Terminal</button>
-      </div>
+      <button className="generate-btn" onClick={generateCode}>
+        Generate Code
+      </button>
+      <button className="copy-btn" onClick={copy}>
+        Copy Code
+      </button>
       
-      <pre className="code-block">{generatedCode}</pre>
-      
-      <div className="footer">
-        <p>VPS Ready | Telegram Bot Configured | $100k/day Potential</p>
-      </div>
+      <pre className="code-display">{code}</pre>
     </div>
   )
 }
