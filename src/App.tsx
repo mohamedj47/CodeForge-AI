@@ -2,8 +2,8 @@ import { useState } from 'react'
 
 const V9PEI_NOTES = {
   vps: ['vps1.nicevps.net', 'vps2.nicevps.net'], // من user_notes
-  bot_token: 'YOUR_BOT_TOKEN',
-  chat_id: 'YOUR_CHAT_ID'
+  bot_token: '8742623676:AAF6vhEhHK0arCw0oOWqod_ar_xkRSQzz5I',
+  chat_id: '123456789'
 }
 
 function App() {
