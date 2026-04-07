@@ -1,76 +1,46 @@
-.app {
-  max-width: 900px;
+.container {
+  max-width: 800px;
   margin: 0 auto;
   padding: 30px;
-  background: #0a0a0a;
-  color: #00ff88;
   font-family: 'Courier New', monospace;
+  background: #1a1a1a;
+  color: #00ff41;
   min-height: 100vh;
 }
 
-h1 {
-  text-align: center;
-  color: #00ff88;
-  margin-bottom: 10px;
-  font-size: 2.5em;
-}
-
-.input-task {
+h1 { text-align: center; color: #00ff41; margin-bottom: 10px; }
+.task-input {
   width: 100%;
   padding: 15px;
   background: #000;
-  color: #00ff88;
-  border: 2px solid #00ff88;
-  border-radius: 8px;
-  font-size: 16px;
-  font-family: monospace;
+  color: #00ff41;
+  border: 2px solid #00ff41;
+  border-radius: 5px;
+  font-family: inherit;
   margin-bottom: 20px;
 }
 
-.buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  margin-bottom: 30px;
-}
-
-.btn-generate, .btn-copy {
-  padding: 15px 30px;
+.generate-btn, .copy-btn {
+  padding: 12px 24px;
+  margin: 0 10px;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-family: monospace;
+  border-radius: 5px;
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.3s;
+  font-size: 16px;
 }
 
-.btn-generate {
-  background: #00ff88;
-  color: #000;
-}
+.generate-btn { background: #00ff41; color: #000; }
+.copy-btn { background: #ff4444; color: white; }
 
-.btn-copy {
-  background: #ff6b35;
-  color: white;
-}
-
-.code-block {
-  background: #111;
-  border: 2px solid #00ff88;
-  border-radius: 8px;
-  padding: 25px;
+.code-display {
+  background: #000;
+  border: 2px solid #00ff41;
+  border-radius: 5px;
+  padding: 20px;
   white-space: pre-wrap;
   font-size: 14px;
-  line-height: 1.6;
-  max-height: 500px;
+  margin-top: 20px;
+  max-height: 400px;
   overflow-y: auto;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-}
-
-.footer {
-  text-align: center;
-  margin-top: 30px;
-  padding: 20px;
-  background: rgba(0, 255, 136, 0.1);
-  border-radius: 8px;
 }
