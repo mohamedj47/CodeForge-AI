@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/steal.php", "destination": "/steal.php" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
