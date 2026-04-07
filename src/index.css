@@ -1,67 +1,76 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-@import "tailwindcss";
-
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-display: "Space Grotesk", sans-serif;
-
-  --color-brand-primary: #00ff41; /* Classic terminal green */
-  --color-brand-secondary: #008f11;
-  --color-brand-dark: #003b00;
-  --color-bg-dark: #0a0a0a;
-  --color-surface: #151515;
-  --color-border: #252525;
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 30px;
+  background: #0a0a0a;
+  color: #00ff88;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
 }
 
-@layer base {
-  body {
-    @apply bg-bg-dark text-gray-300 font-sans antialiased;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-semibold tracking-tight text-white;
-  }
-
-  code, pre {
-    @apply font-mono;
-  }
+h1 {
+  text-align: center;
+  color: #00ff88;
+  margin-bottom: 10px;
+  font-size: 2.5em;
 }
 
-/* Custom scrollbar for that technical feel */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-border rounded-full hover:bg-gray-700 transition-colors;
-}
-
-.glass {
-  @apply bg-surface/80 backdrop-blur-md border border-border;
-}
-
-.terminal-text {
-  text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
-}
-
-.scanline {
+.input-task {
   width: 100%;
-  height: 100px;
-  z-index: 10;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 255, 65, 0.02) 50%, rgba(0, 0, 0, 0) 100%);
-  opacity: 0.1;
-  position: absolute;
-  bottom: 100%;
-  animation: scanline 10s linear infinite;
+  padding: 15px;
+  background: #000;
+  color: #00ff88;
+  border: 2px solid #00ff88;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: monospace;
+  margin-bottom: 20px;
 }
 
-@keyframes scanline {
-  0% { bottom: 100%; }
-  100% { bottom: -100px; }
+.buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.btn-generate, .btn-copy {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: monospace;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-generate {
+  background: #00ff88;
+  color: #000;
+}
+
+.btn-copy {
+  background: #ff6b35;
+  color: white;
+}
+
+.code-block {
+  background: #111;
+  border: 2px solid #00ff88;
+  border-radius: 8px;
+  padding: 25px;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.6;
+  max-height: 500px;
+  overflow-y: auto;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.footer {
+  text-align: center;
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(0, 255, 136, 0.1);
+  border-radius: 8px;
 }
